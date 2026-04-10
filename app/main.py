@@ -95,7 +95,6 @@ def _build_short_parser_notes(parsed_output: dict) -> list[str]:
     """
     Keeps parser notes short and user-facing.
     """
-    field_sources = parsed_output.get("field_sources", {})
     notes = []
 
     heuristic_fields = parsed_output.get("heuristic_fields", [])
@@ -469,6 +468,106 @@ def _get_priority_action(audit: dict, sensitivity_output: dict, result: dict, pa
     return "Use this result as the baseline and tighten one rule at a time."
 
 
+def _get_main_tradeoff(audit: dict, sensitivity_output: dict, result: dict, parser_context: dict) -> str:
+    if result["status"] != "Optimal":
+        return "No trade-off is available because the current scenario is not feasible."
+
+    comparison_table = sensitivity_output.get("comparison_table", pd.DataFrame())
+    if comparison_table.empty:
+        return "No trade-off pattern is available from scenario testing."
+
+    base_row_df = comparison_table[comparison_table["scenario_name"] == "base_case"]
+    if base_row_df.empty or base_row_df.iloc[0]["status"] != "Optimal":
+        return "No reliable base case was available for trade-off analysis."
+
+    base_row = base_row_df.iloc[0]
+
+    stricter_esg_row = comparison_table[comparison_table["scenario_name"] == "stricter_esg"]
+    tighter_share_row = comparison_table[comparison_table["scenario_name"] == "tighter_supplier_share"]
+
+    prefix = "Under the interpreted scenario, " if _needs_soft_language(parser_context) else ""
+
+    if not stricter_esg_row.empty and stricter_esg_row.iloc[0]["status"] == "Optimal":
+        cost_diff = None
+        if pd.notna(base_row["total_cost"]) and pd.notna(stricter_esg_row.iloc[0]["total_cost"]):
+            cost_diff = float(stricter_esg_row.iloc[0]["total_cost"]) - float(base_row["total_cost"])
+
+        if cost_diff is not None and cost_diff > 1:
+            return (
+                f"{prefix}the clearest trade-off is between cost and sustainability, "
+                f"because a higher ESG requirement stays feasible but increases cost."
+            )
+
+    if not tighter_share_row.empty and tighter_share_row.iloc[0]["status"] == "Optimal":
+        base_conc = base_row.get("top_2_concentration_pct")
+        new_conc = tighter_share_row.iloc[0].get("top_2_concentration_pct")
+        if pd.notna(base_conc) and pd.notna(new_conc) and float(new_conc) < float(base_conc):
+            return (
+                f"{prefix}the clearest trade-off is between cost efficiency and diversification, "
+                f"because tighter share limits reduce concentration."
+            )
+
+    return f"{prefix}no single trade-off dominates strongly across the tested scenarios."
+
+
+def _get_plan_fragility(audit: dict, sensitivity_output: dict, result: dict, parser_context: dict) -> str:
+    if result["status"] != "Optimal":
+        return "The plan is fragile because it is not feasible under the current rules."
+
+    comparison_table = sensitivity_output.get("comparison_table", pd.DataFrame())
+    if comparison_table.empty:
+        return "No fragility signal is available from scenario testing."
+
+    prefix = "Under the interpreted scenario, " if _needs_soft_language(parser_context) else ""
+
+    higher_demand_row = comparison_table[comparison_table["scenario_name"] == "higher_demand"]
+    if not higher_demand_row.empty and higher_demand_row.iloc[0]["status"] != "Optimal":
+        return f"{prefix}the main fragility is demand scaling, because the plan fails when demand increases by 25%."
+
+    blocked_row = comparison_table[comparison_table["scenario_name"] == "block_eastern_europe"]
+    if not blocked_row.empty and blocked_row.iloc[0]["status"] != "Optimal":
+        return f"{prefix}the plan appears region-dependent, because blocking Eastern Europe makes it infeasible."
+
+    portfolio_checks = audit.get("portfolio_checks", {})
+    concentration = portfolio_checks.get("top_2_supplier_concentration_pct")
+    if concentration is not None and concentration >= 0.70:
+        return f"{prefix}the main fragility is supplier concentration, because too much volume still sits with the top suppliers."
+
+    return f"{prefix}the plan looks reasonably stable across the tested scenario changes."
+
+
+def _get_best_next_lever(audit: dict, sensitivity_output: dict, result: dict, parser_context: dict) -> str:
+    if result["status"] != "Optimal":
+        return "Best next lever: relax one or more constraints or widen the eligible supplier pool."
+
+    comparison_table = sensitivity_output.get("comparison_table", pd.DataFrame())
+    portfolio_checks = audit.get("portfolio_checks", {})
+    concentration = portfolio_checks.get("top_2_supplier_concentration_pct")
+    esg_tightness = portfolio_checks.get("esg_tightness")
+
+    blocked_row = comparison_table[comparison_table["scenario_name"] == "block_eastern_europe"]
+    higher_demand_row = comparison_table[comparison_table["scenario_name"] == "higher_demand"]
+    stricter_esg_row = comparison_table[comparison_table["scenario_name"] == "stricter_esg"]
+
+    if not blocked_row.empty and blocked_row.iloc[0]["status"] != "Optimal":
+        return "Best next lever: expand supplier capacity outside Eastern Europe before applying a regional exclusion."
+
+    if not higher_demand_row.empty and higher_demand_row.iloc[0]["status"] != "Optimal":
+        return "Best next lever: test additional capacity or a broader supplier pool before planning for higher demand."
+
+    if concentration is not None and concentration >= 0.70:
+        return "Best next lever: tighten the supplier share cap if resilience and diversification matter most."
+
+    if esg_tightness in {"binding_or_nearly_binding", "tight"}:
+        if not stricter_esg_row.empty and stricter_esg_row.iloc[0]["status"] == "Optimal":
+            return "Best next lever: test a higher ESG target if sustainability is becoming a stronger business priority."
+
+    if _needs_soft_language(parser_context):
+        return "Best next lever: replace vague business preferences with numeric targets and rerun the scenario."
+
+    return "Best next lever: use the current result as the baseline and tighten one business priority at a time."
+
+
 def render_decision_summary_panel(result: dict, audit: dict, sensitivity_output: dict, parser_context: dict) -> None:
     st.subheader("Decision Summary")
 
@@ -505,6 +604,30 @@ def render_decision_summary_panel(result: dict, audit: dict, sensitivity_output:
 
     with insight_cols[2]:
         st.success(f"**Priority Action**\n\n{_get_priority_action(audit, sensitivity_output, result, parser_context)}")
+
+
+def render_tradeoff_guidance(audit: dict, sensitivity_output: dict, result: dict, parser_context: dict) -> None:
+    st.subheader("Trade-off Guidance")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.info(
+            f"**Main Trade-off**\n\n"
+            f"{_get_main_tradeoff(audit, sensitivity_output, result, parser_context)}"
+        )
+
+    with col2:
+        st.warning(
+            f"**Plan Fragility**\n\n"
+            f"{_get_plan_fragility(audit, sensitivity_output, result, parser_context)}"
+        )
+
+    with col3:
+        st.success(
+            f"**Best Next Lever**\n\n"
+            f"{_get_best_next_lever(audit, sensitivity_output, result, parser_context)}"
+        )
 
 
 def _build_portfolio_flags(audit: dict, sensitivity_output: dict, result: dict, parser_context: dict) -> list[dict]:
@@ -917,6 +1040,7 @@ def main() -> None:
     parser_context = _get_parser_context()
 
     render_decision_summary_panel(result, audit, sensitivity_output, parser_context)
+    render_tradeoff_guidance(audit, sensitivity_output, result, parser_context)
     render_portfolio_risk_flags(audit, sensitivity_output, result, parser_context)
 
     st.markdown("---")
