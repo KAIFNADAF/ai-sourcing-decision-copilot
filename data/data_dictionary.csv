@@ -1,0 +1,71 @@
+dataset_name,column_name,dtype_example,sample_value,dataset_purpose
+sourcing_requests.csv,request_id,object,REQ-0001,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,request_text,object,"Allocate 170000 units. Block Western Europe. Keep average ESG at least 78, average risk at most 30, use at least 5 suppliers, and cap each supplier at 25%.",Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requester_name,object,Ava Turner,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,business_unit,object,Automotive,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,priority,object,High,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,status,object,completed,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,submitted_at,object,2026-02-17 18:45:00,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,due_by,object,2026-02-25 18:45:00,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requested_demand_units,int64,170000,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requested_min_avg_esg,int64,78,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requested_max_avg_risk,int64,30,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requested_min_suppliers,int64,5,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,requested_max_supplier_share,float64,0.25,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,blocked_regions_raw,object,Western Europe,Raw sourcing requests entering the orchestrator.
+sourcing_requests.csv,manual_approval_required,int64,1,Raw sourcing requests entering the orchestrator.
+workflow_runs.csv,workflow_run_id,object,RUN-0001-01,"Execution instances for each request, including reruns."
+workflow_runs.csv,request_id,object,REQ-0001,"Execution instances for each request, including reruns."
+workflow_runs.csv,run_version,int64,1,"Execution instances for each request, including reruns."
+workflow_runs.csv,current_stage,object,recommend,"Execution instances for each request, including reruns."
+workflow_runs.csv,status,object,Completed,"Execution instances for each request, including reruns."
+workflow_runs.csv,started_at,object,2026-02-17 18:55:00,"Execution instances for each request, including reruns."
+workflow_runs.csv,last_updated_at,object,2026-02-19 05:55:00,"Execution instances for each request, including reruns."
+workflow_runs.csv,trigger_type,object,initial_submission,"Execution instances for each request, including reruns."
+workflow_runs.csv,orchestrator_version,object,0.1.0,"Execution instances for each request, including reruns."
+validation_results.csv,validation_id,object,VAL-0001-01,Validation-agent output for each workflow run.
+validation_results.csv,workflow_run_id,object,RUN-0001-01,Validation-agent output for each workflow run.
+validation_results.csv,request_id,object,REQ-0001,Validation-agent output for each workflow run.
+validation_results.csv,validation_status,object,warning,Validation-agent output for each workflow run.
+validation_results.csv,schema_check_passed,int64,1,Validation-agent output for each workflow run.
+validation_results.csv,business_rules_passed,int64,1,Validation-agent output for each workflow run.
+validation_results.csv,warning_count,int64,2,Validation-agent output for each workflow run.
+validation_results.csv,failure_count,int64,0,Validation-agent output for each workflow run.
+validation_results.csv,validation_summary,object,Scenario passed validation with elevated feasibility risk.,Validation-agent output for each workflow run.
+validation_results.csv,recommended_action,object,Proceed to approval with reviewer attention on tight constraints.,Validation-agent output for each workflow run.
+validation_results.csv,checked_at,object,2026-02-17 19:15:00,Validation-agent output for each workflow run.
+approvals.csv,approval_id,object,APR-0001-01,Human or system approval outcomes.
+approvals.csv,workflow_run_id,object,RUN-0001-01,Human or system approval outcomes.
+approvals.csv,request_id,object,REQ-0001,Human or system approval outcomes.
+approvals.csv,approval_required,int64,1,Human or system approval outcomes.
+approvals.csv,decision,object,Approved,Human or system approval outcomes.
+approvals.csv,reviewer_name,object,M. Chen,Human or system approval outcomes.
+approvals.csv,review_comment,object,Approved after review of trade-offs and feasibility warnings.,Human or system approval outcomes.
+approvals.csv,reviewed_at,object,2026-02-18 00:55:00,Human or system approval outcomes.
+approvals.csv,sla_hours,float64,6.0,Human or system approval outcomes.
+workflow_trace.csv,trace_id,object,TRC-00001,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,workflow_run_id,object,RUN-0001-01,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,request_id,object,REQ-0001,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,stage_name,object,request_intake,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,status,object,Success,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,event_type,object,request_received,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,event_message,object,Request recorded and assigned workflow run.,Append-only stage-level trace log for each workflow run.
+workflow_trace.csv,timestamp,object,2026-02-17 18:55:00,Append-only stage-level trace log for each workflow run.
+artifacts.csv,artifact_id,object,ART-0001-01-01,Versioned artifact registry for each workflow run.
+artifacts.csv,workflow_run_id,object,RUN-0001-01,Versioned artifact registry for each workflow run.
+artifacts.csv,request_id,object,REQ-0001,Versioned artifact registry for each workflow run.
+artifacts.csv,artifact_type,object,parsed_scenario,Versioned artifact registry for each workflow run.
+artifacts.csv,version_no,int64,1,Versioned artifact registry for each workflow run.
+artifacts.csv,storage_uri,object,artifacts/REQ-0001/RUN-0001-01/parsed_scenario_v1.json,Versioned artifact registry for each workflow run.
+artifacts.csv,created_at,object,2026-02-17 19:05:00,Versioned artifact registry for each workflow run.
+artifacts.csv,created_by,object,system,Versioned artifact registry for each workflow run.
+artifacts.csv,is_latest_version,int64,1,Versioned artifact registry for each workflow run.
+recommendation_outputs.csv,recommendation_id,object,REC-0001-01,Final recommendation payload for executable runs.
+recommendation_outputs.csv,workflow_run_id,object,RUN-0001-01,Final recommendation payload for executable runs.
+recommendation_outputs.csv,request_id,object,REQ-0001,Final recommendation payload for executable runs.
+recommendation_outputs.csv,recommendation_status,object,generated,Final recommendation payload for executable runs.
+recommendation_outputs.csv,headline,object,"Allocate 170,000 units across 5 suppliers.",Final recommendation payload for executable runs.
+recommendation_outputs.csv,detail,object,Recommended allocation prioritizes lower-risk supply while preserving coverage.,Final recommendation payload for executable runs.
+recommendation_outputs.csv,selected_suppliers,float64,5.0,Final recommendation payload for executable runs.
+recommendation_outputs.csv,estimated_total_cost,float64,1453594.98,Final recommendation payload for executable runs.
+recommendation_outputs.csv,generated_at,object,2026-02-19 06:15:00,Final recommendation payload for executable runs.

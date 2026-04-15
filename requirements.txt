@@ -1,5 +1,6 @@
 streamlit
 pandas
+numpy
 matplotlib
 PuLP
 python-dotenv

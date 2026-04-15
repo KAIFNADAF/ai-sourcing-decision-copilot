@@ -25,10 +25,10 @@ DEFAULT_SCENARIO = {
 
 
 ALLOWED_REGIONS = [
-    "Asia Pacific",
+    "Ireland",
+    "UK",
     "Eastern Europe",
-    "Latin America",
-    "Middle East",
+    "Asia Pacific",
     "North America",
     "Western Europe",
 ]
@@ -54,14 +54,16 @@ def _normalize_region_name(region: str) -> str:
     region = region.strip().lower()
 
     region_map = {
+        "ireland": "Ireland",
+        "uk": "UK",
+        "united kingdom": "UK",
+        "great britain": "UK",
+        "britain": "UK",
         "asia pacific": "Asia Pacific",
         "apac": "Asia Pacific",
         "eastern europe": "Eastern Europe",
         "east europe": "Eastern Europe",
         "europe east": "Eastern Europe",
-        "latin america": "Latin America",
-        "latam": "Latin America",
-        "middle east": "Middle East",
         "north america": "North America",
         "na": "North America",
         "western europe": "Western Europe",
@@ -354,13 +356,35 @@ def _apply_heuristic_mappings(
     # -------------------------
     # Region blocking language
     # -------------------------
-    if "don't use eastern europe" in text or "dont use eastern europe" in text:
-        if "blocked_regions" not in updated or "Eastern Europe" not in updated["blocked_regions"]:
+    region_phrase_map = {
+        "ireland": "Ireland",
+        "uk": "UK",
+        "united kingdom": "UK",
+        "great britain": "UK",
+        "britain": "UK",
+        "eastern europe": "Eastern Europe",
+        "asia pacific": "Asia Pacific",
+        "apac": "Asia Pacific",
+        "north america": "North America",
+        "western europe": "Western Europe",
+    }
+
+    for phrase, canonical_region in region_phrase_map.items():
+        if (
+            f"don't use {phrase}" in text
+            or f"dont use {phrase}" in text
+            or f"avoid {phrase}" in text
+            or f"block {phrase}" in text
+            or f"exclude {phrase}" in text
+        ):
             existing = updated.get("blocked_regions", [])
-            updated["blocked_regions"] = _clean_region_list(existing + ["Eastern Europe"])
-            if "blocked_regions" not in sources:
-                sources["blocked_regions"] = "heuristic"
-            assumptions.append("blocked_regions was heuristically mapped from natural-language region exclusion")
+            if canonical_region not in existing:
+                updated["blocked_regions"] = _clean_region_list(existing + [canonical_region])
+                if "blocked_regions" not in sources:
+                    sources["blocked_regions"] = "heuristic"
+                assumptions.append(
+                    f"blocked_regions was heuristically mapped from natural-language exclusion of {canonical_region}"
+                )
 
     return updated, assumptions, sources
 
@@ -495,10 +519,10 @@ Rules:
 10. Do not put words like "strong", "low", or "reasonable" into numeric fields. Omit those fields instead.
 
 Allowed region values:
-- Asia Pacific
+- Ireland
+- UK
 - Eastern Europe
-- Latin America
-- Middle East
+- Asia Pacific
 - North America
 - Western Europe
 
@@ -595,7 +619,7 @@ def parse_sourcing_request(user_request: str, model: str = "llama-3.1-8b-instant
 
 if __name__ == "__main__":
     sample_request = (
-        "Need to cover 130k units. Don’t use Eastern Europe. "
+        "Need to cover 130k units. Avoid UK and Ireland. "
         "I’m okay paying a bit more if ESG is strong. "
         "Risk should stay pretty low. "
         "Also don’t make it too concentrated across just 2-3 suppliers."
